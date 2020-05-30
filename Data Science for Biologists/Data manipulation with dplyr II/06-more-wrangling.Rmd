@@ -1,0 +1,510 @@
+---
+title: "Data manipulation with `dplyr` II"
+subtitle: "Data Science for Biologists, Spring 2020"
+author: "Poonam Shah"
+output: 
+  html_document:
+    highlight: zenburn
+    theme: sandstone
+css: static/sjs-style.css
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- SETUP CODE CHUNK -->
+```{r setup, include=FALSE}
+## Change the default figure width and height to your liking, but within reason.
+knitr::opts_chunk$set(echo = TRUE, fig.width=6, fig.height=3.5)
+library(tidyverse)
+library(tidylog)
+library(nycflights13)
+library(ggrepel)
+## if you need more packages you load them here, but you DO NOT INSTALL HERE!
+theme_set(theme_minimal())  ### If you want to set a global theme, do so here. You can change mine!!
+
+
+path_to_data <- "dplyr_lab2/"
+
+color_choice_1 <-"slateblue" 
+
+color_choice_2 <-"tan"
+```
+
+
+## Instructions
+
+**This assignment must be submitted as an RMarkdown document on Blackboard by _Thursday February 27th at 10:00 am_.** 
+
+#### You will be graded on the following criteria:
+
++ Did you enter your name appropriately into the YAML front matter?
++ Does the document knit without errors? *Adding `eval=FALSE` to code chunks with errors will not avoid penalty.*
++ Does your code in the R chunks have appropriate *comments*? 
++ Is your submission appropriately _professional_? 
+  + *You need to run SPELL CHECK before submitting*, available under `Edit->Check Spelling`, **or the ABC icon!!!!!**.
++ Do all figures have clean axis labels? (Titles are optional). There should NOT be any underscores in axis labels.
++ Did you write your written answers in the <answer>answer style</answer>?
++ Have you addressed the questions as they are asked? Be sure to limit your code and your answers to the scope of the question!
+  + If you write code that is not ultimately part of your final answer, you must either: delete it, comment it out, OR move it to a different R chunk with the added chunk options `eval=FALSE, echo=FALSE`. 
++ Is all work your own, including code and written answers?
+  + If ANY of your submitted work is not your own (with the exception of what you have been provided), you will receive a 0 on the assignment. You will be reported for a Level 2 or 3 Academic Integrity Violation, depending on the severity of the issue.
+
+<!-- HEY HAVE YOU KNITTED YET? IT'S VERY HARD TO READ INSTRUCTIONS IN RMD! -->
+
+## PREQUEL: DO NOT HARDCODE YOUR PATH TO THE DATA. 
+Watch in class, I will show you the way!
+
+
+## Questions
+
+For this lab/assignment, you will be using several datasets that are either built-in to R or an R package, or, is available as a CSV file in the `data/dplyr_lab2/` directory. For these, you'll need to read in the data to use it. **Read in the CSV files for use at the BEGINNING of the question they are used for.** Once a dataset is read in, you don't need to read it in again! Seriously, only read in a dataset once (this counts for grading!!) - otherwise you can accidentally introduce bugs, and bugs are bad. Whenever reading in a dataset, you should ALWAYS IMMEDIATELY PRINT THE DATA (tibbles only print 10 rows by default - you can just type the name of the tibble to see these). This allows readers of your reproducible and sharable document to see the data being used!
+
+
+#### Question 1
+
+Consider the two datasets named `algae_lowtide.csv` and `algae_hightide.csv`. These two datasets contain information about algal abundance measured during experiments carried out under low tide and high tide conditions, respectively. The datasets also contain information about whether there were herbivores (i.e. algae predators!) present.
+
+Create a _single tibble_ containing all information from both datasets. Your final tibble should contain three columns:
+
++ tide (should have values "high" and "low")
++ herbivores (should have values "yes" and "no")
++ area (numeric values)
+
+To accomplish this, you will need to manipulate the data using both `mutate()` and `bind_rows()`. Plan how you will do this first, and then implement below. *Your final tibble should be exported to a CSV simply called `algae.csv`*. In addition, if you do NOT print your final tibble, then you WILL LOSE POINTS - **you must ALWAYS LOOK AT YOUR DATA!!!**
+
+
+```{r Question 1 part 1}
+## This code chunk should read in, save, print the datasets only
+
+#it is making a variable for algae_lowtide 
+low <- read_csv(paste0(path_to_data, "algae_lowtide.csv"))
+#printing the variable in the knit
+low
+#it is making a variable for the algae_hightide
+high <- read_csv(paste0(path_to_data, "algae_hightide.csv"))
+#printing the variable in the knit
+high
+
+```
+
+
+```{r Question part 2}
+## This code chunk should perform the analysis, and export the final CSV
+#dataset + pipe + mutate the low column
+low %>%
+  mutate(tide = "low") ->low_newtide_column
+
+#showing the variable
+low_newtide_column
+#dataset + pipe + mutate the high column
+high %>%
+  mutate(tide = "high") ->high_newtide_column
+
+#showing the variable
+high_newtide_column
+
+#binding the rows for the to dataset -> into a new dataset
+bind_rows(low_newtide_column, high_newtide_column) -> algae_full
+
+#writing in the csv 
+write_csv(algae_full, "algae.cvs")
+
+```
+
+
+
+#### Question 2
+
+Consider the two datasets named `mammals_diet.csv` and `mammals_info.csv`. These two datasets contain information about several different, including their diet, adult average body weight in kg, and the average amount of hours they sleep per night.
+Read in these two data sets, and then combine them (using the SAME ORDER of arguments each time!) with each of the functions `left_join()`, `right_join()`, `inner_join()`, and finally `anti_join()`. Examine and visually compare their outputs to understand the differences among these functions. Explain _using a markdown bulleted list_ the differences among these functions in the space below (short explanations please!). PS: Don't plagiarize from the documentation. That's an IAV.
+
+```{r Question 2 part 1}
+## This code chunk should read in, save, print the datasets only
+
+#reading in the mammals diet data
+mammals_diet <- read_csv(paste0(path_to_data, "mammals_diet.csv"))
+
+#the saved variable
+mammals_diet
+
+#reading in the mammls info data
+mammals_info <- read_csv(paste0(path_to_data, "mammals_info.csv"))
+
+#Saved variable
+mammals_info
+
+```
+
+```{r Question 2 part 2}
+## perform joins here, and print the output to compare!
+
+#left join on the two mammals data
+left_join(mammals_diet, mammals_info)
+
+#right join on the two mammals data
+right_join(mammals_diet, mammals_info)
+
+#inner join on the two mammals data
+inner_join(mammals_diet, mammals_info)
+
+#anti join on the two mammals data
+anti_join(mammals_diet, mammals_info)
+
+```
+
+<answer>
+left join will read everything to the left to the right. It will miss the data in the sleep and body.
+
+right join will read everything to the right to the left. It will miss the data in column diet
+
+The inner join looks at all the columns in the middle. Now there is no missing data
+
+The Anti join will only show the file they have in common 
+
+</answer>
+
+
+#### Question 3
+
+Now, consider the additional dataset named `diets_foods.csv` which gives some example foods that different "vores" might eat. Combine this dataset with the previous other two mammal datasets to *create the largest table possible (i.e. with the most number of mammals) that DOES NOT contain NAs.* There may be multiple versions of this solution (in terms of table w/ most number of rows), but only give one. Your final output must be ordered based ascending body weights.
+
+
+```{r Question 3 part 1}
+## This code chunk should read in, save, print the dataset only
+
+#reading in the diets food data
+diets_food <- read_csv(paste0(path_to_data, "diets_foods.csv"))
+
+#the saved variable
+diets_food
+
+```
+
+```{r Question 3 part 2}
+## perform tasks here
+#mammals_diet, mammals_info, diets_food and inner join
+
+#Join the similar columns for the mammals_diet and diets_food. Saved as a new variable
+inner_join(mammals_diet, diets_food) -> full_diet_mammals
+
+#showing the results of the full_diet_mammals
+full_diet_mammals
+
+#binding the columns of the mammals_info and full_diet_mammals. Saved as a new variable as largest_mammal_data
+bind_cols(mammals_info, full_diet_mammals) -> largest_mammal_data
+
+#showing the variable
+largest_mammal_data
+
+#variable being piped to deleted the extra name and order columns
+largest_mammal_data %>%
+  select(-name1,-order1) %>%
+  #piped into the arrange function to ascending by the bobywt_kg
+  arrange(bodywt_kg)
+
+```
+
+
+#### Question 4
+
+This question will consider the `ggplot2` dataset (it's built-in to the library and loaded already!) called `msleep` which, you guessed it, is what I used to make questions 2-3. This dataset contains many missing values. Examine the dataset visually with `View()` from the console to get a full sense. We'll use this dataset to practice working with missing data in a variety of ways.
+
++ Create **four** new versions of this data, each one saved to a new variable of its own _with a meaningful name_! The new versions should be as follows (each is independent; don't "build" instructions on top of each other). Be sure to use `dplyr` command(s)!!
+  1. All rows with NA are removed, using `drop_na()`.
+  2. All rows with NA in the `conservation` column ONLY are removed, using `drop_na()`. The result will still have NA's, just not in this column.
+  3. All rows with NA in the `brainwt` column ONLY are removed, using `drop_na()`. The result will still have NA's, just not in this column.
+  4. All NAs in the column `brainwt` are replaced with the number 0, using `replace_na()`. (But think: should you ever actually do this in real data analysis? ..NO.) 
+
+Be sure to print the output for each new version!
+
+```{r Question 4 part 1}
+## define the FOUR new data frames here
+
+#msleep is a build in data set
+head(msleep)
+
+#1.All rows with NA are removed, using drop_na()
+#drop the missing data in msleep
+drop_na(msleep)->No_na_msleep
+#showing the results
+No_na_msleep
+
+#2.All rows with NA in the conservation column ONLY are removed, using drop_na(). The result will still have NA’s, just not in this column.
+#the data set piped into the drop_na function
+msleep %>%
+  #deleting the missing data in the conservation column
+  drop_na(conservation) -> No_na_conservation
+#showing the results
+No_na_conservation
+
+#3. All rows with NA in the brainwt column ONLY are removed, using drop_na(). The result will still have NA’s, just not in this column.
+#dataset piped into the drop_na function 
+msleep %>%
+  #deleting the missing data in the brainwt column
+  drop_na(brainwt) -> No_na_brainwt
+#showing the results
+No_na_brainwt
+
+#4.All NAs in the column brainwt are replaced with the number 0, using replace_na(). (But think: should you ever actually do this in real data analysis? ..NO.)
+#pipping in the dataset
+msleep %>%
+  #the Na are replaced with 0 in the brainwt column
+  replace_na(list(brainwt= 0)) -> replace_na_0_brainwt
+#showing the results
+replace_na_0_brainwt
+
+```
+
+Then, for each version AND the original untouched `msleep`, calculate the mean brain weight (`brainwt` - NOT BODY WEIGHT!) using simply `mean(dataframe$column-with-weight)`. For the original untouched version, calculate the mean TWICE: once as usual, and once with the added argument `na.rm=TRUE` provided to `mean()`.
+
+```{r Question 4 part 2}
+## calculate the SIX means here (read directions to know what this means - one for each new dataset, and two for the original)
+#the usual mean
+mean(msleep$brainwt)
+
+#the added arguement of na.rm=true
+mean(msleep$brainwt, na.rm = TRUE)
+```
+
+
+**Compare your outputs** - are they all the same? Which one(s) is(are) correct? Below, explain briefly which one(s) give(s) the right answer, and why the wrong ones are wrong. **This can/should be a bulleted list.**
+
+
+<answer>
+They are not the same. The usual way to do the mean is showing up as empty. The usual with the added arugement had an answer of 0.282. The correct answer is mean(msleep$brainwt, na.rm = TRUE). mean(msleep$brainwt) is the wrong answer because of the NA answer
+</answer>
+
+
+#### Question 5
+
+For this question, we'll work with conditional mutation using the dataset `pima.csv`, which contains information about Pima Native women in the North American southwest who, as a population, tend to have elevated rates of Type II Diabetes.
+
+```{r Question 5 part 1}
+## read in, save, print dataset here
+pima <- read_csv(paste0(path_to_data, "pima.csv"))
+
+#show the variable
+pima
+```
+
+
++ Create a new column called `glucose_status` using the functions `mutate()` and `case_when()` that recodes `glucose` into levels "low" (<= 70), "average" (>70, <=120), "above-average" (>120, <=160), and "high" (>160). Save your result to a new variable and print the output to confirm. **HINT!!** You may need to refer back to the intro lab to remind yourself about `&`.
+
+```{r Question 5 part 2}
+# wrangle
+#pipped the data
+pima %>%
+  #Used mutate to added the glucose status. Use cae_when for multiply variables
+  mutate(glucose_status= case_when(glucose <= 70 ~ "low", 
+                                   glucose >70 & glucose <=120 ~ "average", 
+                                   glucose >120 & glucose <=160 ~"above-average",
+                                   glucose >160 ~"high")) -> new_column_glucose_status #new Variable
+
+#show the variable
+new_column_glucose_status
+```
+
++ Visualize the relationship between your new column `glucose_status` and `diabetic`. Hint: how can we see TWO categorical variables in one plot? You've done this before! It's a barplot! **Make sure it is DODGED** and not stacked. **Importantly** when you first make this plot it will likely have undesirable visual features. To fix this, read over [this documentation](https://ggplot2.tidyverse.org/reference/position_dodge.html) and find the solution to implement here (2nd plot from the top).
+```{r Question 5 part 3}
+#piped in the dataset
+new_column_glucose_status %>%
+  
+  #ggplot +aes+ x axis on the glucose status + being filled with diaetic data
+  ggplot(aes(x=glucose_status, fill=diabetic)) +
+  
+  #it is going to be a bar plot with changes in the space between the bars
+  geom_bar(position = "dodge2") +
+  
+  #clearing up the axis
+  labs(x="Glucose Status", y="Count") +
+  
+  #changed the colors
+  scale_fill_manual(values = c(color_choice_1,color_choice_2)) 
+```
+
++ Use `if_else()` and `mutate()` to create a new column called "pregnant" to say "Yes" if the individual ever was pregant, and "No" if the individual never had a pregnancy. Save the output for subsequent use.
+
+```{r Question 5 part 4}
+#ifelse
+#data set + pipe factor
+pima %>%
+  #making a new column from the pregnant column 
+  mutate(pregnant= if_else(npreg > 0, "Yes", "No")) -> new_column_pregnant
+#showing the vaule
+new_column_pregnant
+```
+
++ Check that your new pregnant variable is correct by wrting code to reveal: Is the sum of npreg for all rows where pregnant is "No" 0? If this is true, it worked! This can be done entirely with `dplyr` commands. This is how one might write an assertion - ask if this condition is true, and if not, the script should die. For an added challenge, actually write an assertion in the code chunk (to this end, check out the function `dplyr::pull()`. Super useful.)
+
+```{r Question 5 part 5 }
+#data set + piped
+pima %>%
+  #adding a new column, using the if else to make a Yes and no in the column
+  mutate(pregnant= if_else(npreg > 0, "Yes", "No")) %>%
+  #pull the data from pregnent column
+  pull(pregnant)
+#pull the data from new column pregnant
+pull(new_column_pregnant)
+
+```
+
+
++ From the original dataset, _replace_ the column `diabetic` with a new version that says `TRUE` and `FALSE` instead of Yes and No. Do this in two ways: with `if_else()` and with `case_when()`. Be careful not to actually overwrite the original version of the data itself!!
+
+```{r Question 5 part 6}
+# solution with if_else
+pima %>%
+  #new column Diabetics to read the yes as true and no as false
+  mutate(Diabetics = if_else(diabetic == "Yes", TRUE, FALSE)) %>%
+  
+  #delected the orginal diabetic column, + a new data set
+  select(-diabetic)-> new_pima_part_5.6
+
+#Show the variable
+new_pima_part_5.6
+  
+```
+
+```{r Question 5 part 7}
+# solution with case_when
+#data + pipe
+pima %>%
+  #New column Diabetics using case when
+  mutate(Diabetics = case_when(diabetic == "Yes" ~ TRUE, 
+                               diabetic == "No" ~ FALSE)) %>%
+  #delected the diabetic column
+  select(-diabetic)-> new_pima_part_5.7
+
+#showing the variable
+new_pima_part_5.7
+```
+
+
+#### Question 6
+
+The `chickwts` dataset (built-in to base R) contains information on the weight of chicks after being fed different feed supplements. The different feed supplements are labeled casein, horsebean, linseed, meatmeal, soybean, and sunflower in the `feed` column. I have created a new dataset in `feed_protein.csv` that contains the grams of protein per cup for each of these feeds.
+
+```{r Question 6 part 1}
+## look at chickwts, read/save/look at the external data set here
+#loading the new dataset
+feed_protein <- read_csv(paste0(path_to_data, "feed_protein.csv"))
+
+#showing the variable
+feed_protein
+```
+
+
+Using your `dplyr` functions, combine the two data-frames so that there is an additional `g_protein` column and all of the original columns and rows in chickwts are retained (but don't overwrite anything! save it to something else!). Hint: you'll need to make sure the datasets are compatible before you can join them (check out `dplyr::rename()` and be sure to specify arguments in the right order!).
+**For another bonus**, write an assertion to check that the final data frame contains at least TWO correct components, and do NOT DO ANY HARDCODING!!! You will not lose points for a bad assertion here, just don't leave any majors bugs behind you.
+
+```{r Question 6 part 2}
+## wrangle it here
+#dataset + piped
+feed_protein %>%
+  #renaming the feed column and saving it as a variable
+  rename(feed=feed_type) ->rename_feed_column_feed_protein
+
+#showing the variable
+rename_feed_column_feed_protein
+
+#renaming the feed column and saving it as a variable
+chickwts %>%
+  rename(feed=feed)->rename_feed_column_chcickwts
+
+#showing the variable
+rename_feed_column_chcickwts
+
+#combine the two data-frames
+inner_join(rename_feed_column_chcickwts, rename_feed_column_feed_protein) -> combine_dataset_chicken
+
+#showing the variable
+combine_dataset_chicken
+
+
+```
+
+
+Finally, make a visualization (specifically a scatterplot) showing the relationship between _median_ chicken weight across nutritional content (measured as grams of protein per cup). Each point should be additionally labeled with the name of its corresponding feed. First, do this with `geom_point()` and `geom_text()` (don't spend much time here, the punchline is the next task - style the figure appropriately but don't try to "fix" it - you'll see what I mean).
+OMG another hint!! Summarize will remove unnecessary columns from your data too. To re-get those columns, either: a) also group by them (IF IT MAKES SENSE), or b) you'll need to use some join magic.
+
+```{r Question 6 part 3}
+### version of plot with point/text
+#data + pipe
+chickwts %>%
+  
+  #keeping the feed column
+  group_by(feed) %>%
+  
+  #getting the median for the weight
+  summarise(median_weight=median(weight)) -> chickwts_6.3
+
+#showing the variable
+chickwts_6.3
+
+#data +pipe
+rename_feed_column_feed_protein %>%
+  
+  #keeping the feed column
+  group_by(feed) %>%
+  
+  #getting the median of the g-protein
+  summarise(median_g_protein=median(g_protein)) ->
+  #saving the variable
+  Feed_protein_6.3
+
+#megring the two dataset together
+inner_join(Feed_protein_6.3, chickwts_6.3) -> total_data_6.3
+
+#showing the variable
+total_data_6.3
+
+#pipe the dataset
+total_data_6.3 %>%
+  
+  #making a plot with label axis and filling in the color with feed
+  ggplot(aes(x=median_g_protein, y=median_weight, color=feed))+
+  
+  #scatterplot and adding text and label be feed
+  geom_point() + geom_text(aes(label=feed)) +
+  
+  #clearing up the axis
+  labs(x="median grams of protein per cup", y="median weight") +
+  
+  #changing the color
+  scale_color_brewer(palette = "Set1")
+
+```
+
+Now, feel disappointed in the viz and feel thrilled to learn about the library [`ggrepel`](https://cran.r-project.org/web/packages/ggrepel/vignettes/ggrepel.html). (GO OVER THE POST! GO OVER THE POST! The word ggrepel back there is a LINK!) Load this library in the setup chunk (not here!), and use it below to make an updated version of the figure but instead of `geom_text()`, use EITHER `geom_text_repel()` or `geom_label_repel()` - your choice! Ensure a compelling and attractive figure (to the extent possible with this data..)
+
+```{r Question 6 part 4}
+###fig using ggrepel
+
+#pipe the dataset
+total_data_6.3 %>%
+  
+  #making a plot with label axis and filling in the color with feed
+  ggplot(aes(x=median_g_protein, 
+             y=median_weight, 
+             color=feed))+
+  
+  #scatterplot and adding text and label be feed
+  geom_point() + 
+  
+  #fixing the labels on the graph. The label by feed
+    geom_label_repel(aes(label = feed),
+                  #placing box around the label
+                  box.padding   = 0.35, 
+                  #adding lines to the box
+                  point.padding = 0.5,
+                  #the grey line to the point to the label
+                  segment.color = "grey50") +
+  
+  #clearing up the axis
+  labs(x="median grams of protein per cup",
+       y="median weight") +
+  
+  #changing the color
+  scale_color_brewer(palette = "Set1")
+```
+

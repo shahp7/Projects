@@ -1,0 +1,61 @@
+Installed libraries include:
+
+1. tidyverse (full install w/ all deps)
+2. magrittr
+3. knitr
+4. rmarkdown
+5. RColorBrewer
+6. infer
+7. patchwork
+8. tidylog
+9. ggrepel
+10. emojiplot 
+
+
+##### Question 7
+
+One more big one and you're done! (Un)happily, this question uses _all the skillz_. For this question, you will using data from the `nycflights13` library (pre-loaded in the setup chunk). There are five datasets from this package, and we will focus on the two `flights` and `planes`. Examine these using `View()` from the console (not in this Rmarkdown!). 
+
+`flights` contains information about individual departures. Individual planes are indicated by their tail number (`tailnum`). Information about individual planes is available in the data `planes`. In particular, this tibble lists the year each individual plane was manufactured. From `flights` and `planes`, make a combined tibble that contains the following columns:
+
++ tail number
++ year of manufacture for each plane.
++ month of departure
++ mean air time for each plane at each month basis (HINT! does this exist already or do you to make it? You have to make it. Sounds like a grouping and summarizing to me, just saying.) 
+
+You should ONLY CONSIDER planes that flew to LAX (`dest`) in summer months June, July, and August (`month`). Once you have created your beautifully wrangled data, make a scatterplot of mean arrival delay across year of manufacture, ) 
+
+Consider best-plotting principles and choose your own stylstic adventure. In 1-2 sentences below, describe trends you observe, or fail to observe as the case may be!
+
+HINTS AND RULES: 
+
++ Wrangle hints/rules:
+  + First subset and wrangle each of the two data frames to only the columns/rows of interest. Then join together the subsetted versions. When joining, you should do so by ONLY CONSIDERING the info shared by both tibbles (which join is this?)
+  + Do NOT hardcode months or destination of LAX when you filter!!!!! Predefine what destination, months you are interested in and then use them in your code
+  + For months, don't forget `%in%`!
+  + Remember - the only shared names between dataframes you want to join should be the names you want to join by. This is important!!! Hint2: year in `flights` is NOT the same as year in `planes`.
+  + Are your means being funky? Did you apply your new question 4 knowledge? Definitely not a great idea to keep around NA's **in the `arr_time` column specifically.**
+  + All wrangling should be in a SINGLE PIPE! Do not even attempt to write this all at once. Write one line at a time, check it, and then keep tacking on the pipes.
+  + For your plot, you will months to be their NAMES not NUMBERS! This involves...recoding your data using your new conditional mutation skills during the wrangling stage! (You can hardcode month names for this recoding.)
+
++ Plot hints/rules:
+  + Summer months should be clearly distinguished through faceting, and color if you wish - but NOT THE DEFAULT COLORS!
+  + Make sure there is a separate trend line for each month. The line should be NOT be curvy! Straight line! 
+  + Make sure the trend lines are black and NOT the same color as the points
+  + Appropriate labels and all that jazz
+
+```{r Question 7 part 1 BONUS}
+### wrangle here
+
+```
+```{r Question 7 part 2 BONUS}
+## r code to plot goes here
+
+```
+
+
+**For an absolutely ridiculous bonus**, use emojis instead of points. [See this vignette](https://cran.r-project.org/web/packages/emojifont/vignettes/emojifont.html). Note: This package is already installed in the cloud but it is not loaded. Please make sure to use only the most absurd emoji(s) for your points.
+
+```{r Question 7 part 3 BONUS}
+### emoji plot
+```
