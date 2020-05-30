@@ -1,0 +1,396 @@
+---
+title: "ANSWERS: Working with untidy and tidy data"
+subtitle: "Data Science for Biologists, Spring 2020"
+author: "Poonam Shah"
+output: 
+  html_document:
+    highlight: espresso
+css: static/sjs-style.css
+params:
+  data_path: "data/"
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- SETUP CODE CHUNK -->
+```{r setup, include=FALSE}
+## Change the default figure width and height to your liking, but within reason.
+knitr::opts_chunk$set(echo = TRUE, fig.width=6, fig.height=3.5)
+library(tidyverse)
+library(kableExtra) # helpful to print fancy tables in RMarkdown
+theme_set(theme_minimal())  ### If you want to set a global theme, do so here
+
+
+color_choice_1="coral"
+color_choice_2="darkslategray"
+```
+
+
+# <mark>Questions</mark>
+
+#### Preface Question
+
+Look at the YAML front matter: there is something NEW! Read about params [here](https://rmarkdown.rstudio.com/lesson-6.html). In this case we set a global parameter for the RMarkdown file that corresponds to the path where data lives! We can proceed to use this as a variable like so (always `params$`, like a column in a data frame!). Use this variable for your paths, e.g. `read_csv(paste0(params$data_path, <NAMEOFFILE>))`
+```{r Preface Question}
+
+params$data_path
+
+
+```
+
+#### Question 1
+
+```{r Question 1 part 1}
+# Code chunk to read in and examine the data with head()
+
+measle <- read_csv(paste0(params$data_path, "mcv_immunized_percent_of_one_year_olds.csv"))
+
+head(measle)
+```
+
+
+```{r Question 1 part 2}
+# Code chunk to convert data to tidy
+#data and piped into the function
+measle %>% 
+  #pivot_longer untidy to tidy. minus country
+  pivot_longer(-country, names_to ="Year", values_to="Percent") -> Measle_data_from_q1 #new variable
+
+head(Measle_data_from_q1)
+
+```
+#### Question 2
+
+
+```{r Question 2}
+# Code chunk to plot the data
+#dataset piped
+Measle_data_from_q1 %>%
+  #filter and using an array to show both country
+  filter(country %in% c("Argentina", "Dominica")) %>%
+  #setting up the axis and groups for the line plot
+  ggplot(aes(x=Year, y=Percent, color=country, group=country)) +
+  #line graph
+  geom_line()+
+  #the points graph
+  geom_point()+
+  #clear up the axis
+  labs(x="Year", y="Percent")+
+  #changed the colors
+  scale_color_manual(values = c(color_choice_1,color_choice_2))+
+  #changed the angle of the year
+  theme(axis.text = element_text(angle = 90))
+
+
+```
+
+<answer>
+In a few sentences below the figure, discuss the trends you observe.
+
+Dominica started the measle vaccines in 1982 it started even out around 1993. Argentina started measle at 1980. Argentina is uneven in the measle vaccines. 
+
+</answer>
+
+#### Question 3
+
+
+```{r Question 3 part 1}
+# Code chunk to read in and examine the data with head()
+#reading in the code
+Diphtheria_tetanus_pertussis <- read_csv(paste0(params$data_path, "dtp3_immunized_percent_of_one_year_olds.csv"))
+
+#Showing the data
+head(Diphtheria_tetanus_pertussis)
+
+```
+
+
+```{r Question 3 part 2}
+# Code chunk to convert data to tidy and combine with question 1 data
+
+#tidying up Diphtheria-tetanus-pertussis
+Diphtheria_tetanus_pertussis %>%
+pivot_longer(-country, names_to ="Year", values_to="Percent") %>%
+  #adding a new column
+  mutate(Vaccine = "Diphtheria-tetanus-pertussis" ) -> DTP_tidy
+
+#Adding a new column
+Measle_data_from_q1 %>%
+  mutate(Vaccine = "Measles") -> Measle_tidy_q3
+
+#combing the dataset
+bind_rows(DTP_tidy,Measle_tidy_q3) -> DTP_Mealse_data
+
+#changing year to a char to a dbl
+DTP_Mealse_data %>%
+mutate(Year = as.numeric(Year)) %>%
+#filtering between 2005-2011
+filter(between(Year, 2005,2011)) -> DTP_Mealse_2005_2011_data
+
+```
+
+```{r Question 3 part 3}
+# Code chunk to plot the data
+DTP_Mealse_2005_2011_data %>%
+  #filter and using an array to show both country
+  filter(country %in% c("India", "France")) %>%
+  #setting up the axis and groups for the line plot
+  ggplot(aes(x=Year, y=Percent, color=Vaccine, group=country)) +
+  #line graph
+  geom_line()+
+  #the points graph
+  geom_point() +
+  xlim(2005, 2011) +
+  facet_wrap(Vaccine~country) +
+  scale_color_manual(values = c(color_choice_1,color_choice_2)) +
+  theme(legend.position="none")
+
+```
+
+<answer>
+France had a better vaccine rate then India. France is a first world country it would have a better medicine then India.
+India has a low vaccine rate for both Measles and DTP.  
+</answer>
+
+#### Question 4
+
+
+```{r Question 4 part 1}
+# Code chunk to read in and examine the data with head()
+
+#reading in the data
+seals<-read_csv(paste0(params$data_path, "seals.csv"))
+#viewing the data
+head(seals)
+
+```
+
+
+```{r Question 4 part 2}
+# Density plot with feeding
+seals %>%
+  #x axis and fill with feeding
+  ggplot(aes(x=oxygen_use, fill=feeding)) +
+  #density plot
+  geom_density(alpha=0.6) +
+  #cleaning up the axis
+  labs(x="Oxygen usage", y="Density") +
+  scale_fill_manual(values = c(color_choice_1,color_choice_2))
+
+```
+
+```{r Question 4 part 3}
+# Code chunk for data un-tidying and scatterplot
+seals %>%
+  pivot_wider(names_from = feeding, values_from = oxygen_use) %>%
+  #renaming the columns
+  rename(oxygen_use_not_feeding = No) %>%
+  rename(oxygen_use_feeding_on = Yes) -> seals_untidy
+  
+  
+seals_untidy %>%  
+  ggplot(aes(x=oxygen_use_not_feeding, y=oxygen_use_feeding_on)) +
+  geom_point(aes( color=seal)) +
+  # add reference lines
+  geom_abline() + 
+  #fixing the axis units
+  xlim(30,120) +
+  ylim(0,150) +
+  #making sure every point has a different color
+  scale_color_distiller(palette = "Dark2") +
+  #clearing up the axis
+  labs(x="oxygen use not feeding", y="oxygen use feeding on")
+
+```
+
+<answer>
+In a few sentences below the figure, discuss whether EACH FIGURE shows evidence for the researchers’ prediction.
+
+The first graph is a simple density plot. It is hard to read the graph. It looks like the seals with no feeding had a highest oxygen usege. The second graph is a scatterplot. It shows the Qxygen use feeding on has a better oxygen level. It shows a postive trendline
+</answer>
+
+#### Question 5
+
+
+```{r Question 5 part 1}
+
+#reading in the data
+planets <- read_csv2(paste0(params$data_path, "planets.csv"))
+#examine the data with head()
+head(planets)
+```
+
+
+```{r Question 5 part 2}
+
+planets %>% 
+  #separate the items in the terrain column
+  separate_rows(terrain) %>%
+  #separate the items in the climate column
+  separate_rows(climate) -> planets_tidy
+
+```
+
+
+#### Question 6
+
+```{r Question 6}
+
+planets_tidy %>%
+  #separated the date and time from T
+  separate(edited, c("edited_date", "edit_time"), sep="T") %>%
+  #uniting the two columns together
+  unite(ratio_period_rotation_orbital, rotation_period, orbital_period) %>%
+  #uniting the two columns together
+  unite(name_pop, name,population) %>%
+  #only contains mountains from terrain
+  filter(terrain=="mountains") %>%
+  arrange(desc(ratio_period_rotation_orbital))-> planets_q6
+
+```
+
+
+#### Question 7
+
+
+```{r Question 7 part 1}
+## defines each column as an array
+tibble(
+  color        = c("blue", "green", "turquoise"),
+  male         = c(25, 36, 52),
+  female       = c(28, 17, 33),
+  species_abbr = c("sp1", "sp1", "sp1")
+) -> frogs_sp1
+
+## defines tibble in a format like the tibble would end up appearing
+## spacing is helpful!
+tribble(
+  ~color, ~male, ~female, ~species_abbr,
+  "orange", 13,   17,    "sp2",
+  "red",    45,   36,    "sp2",
+  "pink",  31,    25,    "sp2"
+) -> frogs_sp2
+
+## Like strategy one
+tibble(
+  species_name = c("Frogus firstus", "Frofus secondus"),
+  species_abbr = c("sp1", "sp2")
+) -> species_names
+
+### ADD CODE HERE TO PRINT OUT THESE THREE DATASETS!!! YOU HAVE TO LOOK AT THEM TO USE THEM!!
+print(frogs_sp1)
+print(frogs_sp2)
+print(species_names)
+
+```
+
+
+
+```{r Question 7 part 2}
+# Code chunk to tidy and combine the three datasets
+bind_rows(frogs_sp1,frogs_sp2) ->full_frogs
+
+left_join(full_frogs,species_names) ->full_frogs_species
+
+full_frogs_species %>%
+  #separate species name to genus and species
+  separate(species_name, c("genus", "species")) %>%
+  #deleted the species_abbr
+  select(-species_abbr) %>%
+  #copying the male column
+  mutate(number=male) %>%
+  #copying the female column
+  mutate(NUMBER=female) %>%
+  #combine the number columns
+  unite(Numbers, number, NUMBER) %>%
+  #separating the data in the column
+  separate_rows(Numbers) %>%
+  #changing male from values to male
+  mutate(Male_sex= if_else(male >=5, "male", "female")) %>%
+  #changing female from values to female
+  mutate(Female_sex= if_else(female>=5, "female", "male")) %>%
+  #combine the genders
+  unite(Sex, Male_sex, Female_sex) %>%
+  #separate in the row
+  separate_rows(Sex) %>%
+  #delecting the old male and female
+  select(-male,-female) %>%
+  #keeping the correct rows
+  slice(1,4,5,8,9,12,13,16,17,20,21,24)->final_frog
+
+```
+
+```{r Question 7 part 3}
+
+final_frog %>%
+  #filtering it by color
+  filter(color %in% c("blue", "green")) %>%
+  #show the female
+  filter(Sex=="female")
+
+#There are more blue frugus firstus 
+   
+```
+
+```{r Question 7 part 4}
+
+final_frog %>%
+#filtering it by male
+filter(Sex=="male") %>%
+#show the most to the least by numbers column
+arrange(desc(Numbers))
+
+#The Forgies firstus has the most male frogs
+```
+
+```{r Question 7 part 5}
+final_frog %>%
+  #making the tidy to untidy
+  pivot_wider(names_from = Sex, values_from = Numbers) %>%
+  #filter the species
+  filter(species=="secondus") %>%
+  #changing the columns to chr to a numeric
+  mutate(male = as.numeric(male)) %>%
+  mutate(female=as.numeric(female)) %>%
+  #the ratio formula
+  mutate(ratio=male/female)
+ 
+```
+
+
+
+#### Question 8
+
+```{r Question 8}
+# Code chunk for kable()
+
+final_frog %>%
+  kable()
+
+final_frog %>%
+  kable() %>%
+  kable_styling("striped", full_width = F) %>%
+  row_spec(1:2, bold = T, color = "blue", background = "white") %>%
+  row_spec(3:4, bold = T, color = "green", background = "white") %>%
+  row_spec(5:6, bold = T, color = "darkturquoise", background = "white") %>%
+  row_spec(7:8, bold = T, color = "orange", background = "white") %>%
+  row_spec(9:10, bold = T, color = "red", background = "white") %>%
+  row_spec(11:12, bold = T, color = "pink", background = "white")
+  
+
+final_frog %>%
+  kable() %>%
+  kable_styling(bootstrap_options = "striped", font_size = 7)
+
+
+```
+
+#### BONUS QUESTION
+
+*Add your own chunks if you choose to do this adventure.*
+```{r Bonus Question}
+
+```
+<answer>
+Replace this text with your answer.
+</answer>
