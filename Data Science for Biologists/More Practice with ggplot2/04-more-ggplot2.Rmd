@@ -1,0 +1,506 @@
+---
+title: "More practice with `ggplot2`"
+subtitle: "Data Science for Biologists, Spring 2020"
+author: "Poonam Shah"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: tango
+css: static/sjs-style.css
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- SETUP CODE CHUNK -->
+```{r setup, include=FALSE}
+## Change the default figure width and height to your liking, but within reason.
+knitr::opts_chunk$set(echo = TRUE, fig.width=4, fig.height=3)
+library(tidyverse)
+library(patchwork)
+theme_set(theme_classic())
+```
+
+
+## Instructions
+
+For this lab/assignment, you will continue to hone your plotting skills _and_ learn how to read and use external datasets. Questions below are given as prompts with either templated or empty R chunks for you to fill in and complete.
+
+**This assignment must be submitted as an RMarkdown document on Blackboard by _Thursday February 13th at 10:00 am_.** 
+
+#### You will be graded on the following criteria:
+
++ Did you enter your name appropriately into the YAML front matter?
++ Does the document knit without errors? *Adding `eval=FALSE` to code chunks with errors will not avoid penalty.*
++ Does your code have appropriate *comments*?
++ Is your submission appropriately _professional_? 
+  + *You need to run SPELL CHECK before submitting*, available under `Edit->Check Spelling`.
++ Do all figures have clean axis labels? (Titles are optional). There should NOT be any underscores in axis labels.
++ Did you write your written answers in the <answer>answer style</answer>?
++ Have you addressed the questions as they are asked? Be sure to limit your code and your answers to the scope of the question!
+  + If you write code that is not ultimately part of your final answer, you must either: delete it, comment it out, OR move it to a different R chunk with the added chunk options `eval=FALSE, echo=FALSE`. 
++ Is all work your own, including code and written answers?
+  + If ANY of your submitted work is not your own (with the exception of what you have been provided), you will receive a 0 on the assignment. You will be reported for a Level 2 or 3 Academic Integrity Violation, depending on the severity of the issue.
+
+  
+
+## Background
+
+This assignment will make use of an _external data set_, i.e. a data set that you have to upload to R yourself. We will do this using the `readr` package, which is part of the core `tidyverse` and assists in reading/writing files. You will be working with a file called `"sparrows.csv"`. You will see this file is available already in this project in the Files pane in RStudio. If you click on this file name, it will appear in the Editor pane -  this is a *comma-separated file* (CSV, comma-separated values), meaning each column of data is separated by a comma. Another way to say this is that the file is *comma-delimited*. It is also very common to see *tab-delimited* files (TSV) in data science.
+
+
+Data in this file was collected in 1898 by Hermon Bumpus, an American biologist working at Brown University. Immediately following a bad winter storm, he collected 136 English house sparrows (some alive, some dead), *Passer domesticus*, and brought them indoors. Of these birds, 64 had died during the storm, but 72 recovered and survived. Bumpus measured the birds' physical traits and recorded them for future generations of data science students.
+
+### Reading CSV files and defining factors
+
+We use the function `read_csv` from the package `readr` to read in CSV files. When using functions from specific packages, it is often safer to write them in the format `package::function()`, i.e. `readr::read_csv()`, just in case there is another function named `readr()` also floating around in the R environment. It is not likely this will happen to you at this stage of your data sciencing, but it doesn't hurt to get in the habit. 
+
+We can read in the file as follows:
+```{r, read-sparrows}
+## save the data frame, automatically made into a TIBBLE by readr,  into the variable `sparrows`
+## readr tells us about all the columns it reads in!!
+sparrows <- read_csv("data/sparrows.csv") ## RELATIVE PATH to the dataset
+```
+
+`readr` has made some very educated guesses as to what _type_ of variable each column stores - it has found three `character` columns, and nine `double` columns. Doubles can be thought of numbers with decimals, as opposed to integers - we therefore know these columns contain __continuous quantitative data__! (Note: it is possible to specify the column types to `readr`, but that's for another day.)
+
+Let's examine the actual values further:
+```{r, head-sparrows}
+## Examine the data
+#head showed the top 6 of the data
+head(sparrows)
+```
+
+
+From the `head(sparrows)` output, we see that those three character columns appear to contain **categories** of a **categorical variable**. In R, we use the data type **`factor`** to represent categorical variables, and we call the categories **`levels`**. But, R doesn't seem to think that these columns are factors - it thinks they are characters - plain old works with nothing interesting linking them. 
+
+In fact, `readr` assumes that NOTHING is a factor, so we have the full power to determine which variables are factors, and what the _order_ of the categories should be. In R, we call the categories of a factor its _levels_. While factors are very meaningful, they can be frustrating to work with. Trust me.
+
+> The base R version of the `read_csv` function is `read.csv` and assumes the opposite - that all characters are factors. This problem notoriously causes everyone a lot of major headaches because factors are very difficult to work with.
+
+
+Let's therefore begin to **convert these columns into factors**:
+
+```{r, factor-sex-1}
+# Convert Sex to a factor 
+sparrows$Sex <- factor(sparrows$Sex)
+
+# If we run head() again, we'll see the successful change
+head(sparrows)
+
+# The levels function tells us the categories in the variable:
+levels(sparrows$Sex)
+```
+
+**By definition, levels are ordered**, and if no order is specified, R defaults to alphabetical order. To re-order a factor, simply refine the levels with your preferred order of the categories, for example:
+```{r, factor-sex-2}
+# Make the order Male, Female. 
+levels(sparrows$Sex) <- c("Male", "Female")
+
+# Print it out to see
+print(levels(sparrows$Sex))
+```
+
+
+This can also all be done at once with the single command below.
+```{r, factor-sex-3}
+# Convert to factor and order levels as desired at once
+#It is a one line of code to convert the order levels
+sparrows$Sex <- factor(sparrows$Sex, levels=c("Male", "Female"))
+```
+
+
+
+## <mark>Questions</mark>
+
+##### Question 1 
+Visualize the distribution of `Survival` using a bar plot, where all bars are filled with a single color of your choosing.
+
+```{r survival-barplot}
+### Barplot code goes here
+ggplot(sparrows, aes(x=Survival)) +
+  geom_bar(fill="blue") #this is the bar plot
+
+
+```
+    
+    
+##### Question 2
+
+You may have noticed in Question #1, `Alive` was automatically plotted before `Dead`. What if we wanted `Dead` before `Alive` on the X-axis? **We'd have to re-factor the column!**. For this question, do the following:
+
++ Use your new factor skills to convert _both_ `Survival` and `Age` to factors. For `Survival`, set the order to be be (1) Dead, (2) Alive. for `Age`, the order should be (1) Young, (2) Adult. 
+  + In total, this should be _two_ lines of code only (one line for each variable) - in a single line, you should set the variable as a factor AND define its levels.
+  + Confirm you are correct by printing the LEVELS of each column
++ Then, make a new barplot visualizing `Survival` with your re-factored variable to see how the X-axis order changed. 
+
+
+```{r factor-survival-age}
+## Fill in your code to re-factor and plot here
+# the refactor Survival 
+sparrows$Survival <- factor(sparrows$Survival, 
+                            levels =c("Dead", "Alive"))
+#print the Survival factor to see if it worked
+print(levels(sparrows$Survival))
+
+#The barplot of the new re-factor Survival 
+ggplot(sparrows, aes(x=Survival))+
+  geom_bar(fill="coral")
+
+#The refactor Age 
+sparrows$Age <- factor(sparrows$Age, 
+                       levels =c("Young", "Adult"))
+#print the Age factr to see if it worked 
+print(levels(sparrows$Age))
+```
+    
+    
+    
+##### Question 3
+We will now look at the relationship between two categorical variables using a _grouped bar plot_. Visualize the distribution of `Survival` using a bar plot as before, but now color (in this case, fill) the bars by `Age`. There are two ways these bars can be represented: stacked (this will happen by DEFAULT when you add the fill) or dodged (add the argument `position = "dodge"` to `geom_bar()`). 
+
+Make one of each type of barplot, and in the space below, answer whether males or females where more likely to survive. Write an additional 1-2 sentences describing which visualization choice makes it easier to answer this question.
+  
+
+```{r survival-age-stacked}
+## Fill in your code here for the STACKED barplot.
+ggplot(sparrows, aes(x=Survival))+
+  #It will fill the bars based on the age
+  geom_bar(aes(fill=Age)) +
+  labs(x="Survival", y="count")-> plot1
+
+print(plot1)
+```
+  
+```{r survival-age-dodged}
+## Fill in your code here for the DODGED barplot.
+ggplot(sparrows, aes(x=Survival, fill=Age))+
+  #The position will make the bars right next to each other 
+geom_bar(position="dodge") +
+  labs(x="Survival", y="count") -> plot2
+
+```
+    
+<answer>
+<!-- your answer goes in here. DO NOT DELETE THE ANSWER TAGS -->
+
+The dodge the graph will show it better to say which one is going to survival better. 
+</answer>
+
+##### Question 4
+It is possible to add plots together with the _awesome_ package [`patchwork`](https://patchwork.data-imaginist.com/articles/patchwork.html), which has been installed and loaded for you. Below, add your two bar plots together with a `+` sign by adding the two variables - the code will be short! Then, stack your plots by dividing with with the `/` sign. *You will need to tweak the figure width/height to get a nice-looking output, beware.*
+
+
+```{r survival-sex-patch1}
+## Add the plots for horizontal arrangement
+# The graphs are values now. When using the plus sign to make them horizontal arrgement 
+plot1+ plot2
+```
+
+
+```{r survival-sex-patch2}
+## Divide the plots for a vertical arrangement
+#The graphs are values now. When using the / sign to make them vertical arrangment
+plot1/plot2
+```
+
+
+##### Question 5
+Compare the distributions of living vs. dead sparrow skull widths using a single _density plot_, where distributions are colored (filled) according to their `Survival` status. Make sure both distributions are fully visible and not blocking each other (hint! what other option do you need?), and specify _your own_ colors for this task using either colors of your choosing or an existing palette.
+  
+In the space below, write 1-2 sentences about whether skull width may have been a contributing factor to who lived and who died.
+
+
+```{r survival-skull-density}
+## Fill in your density plot code here
+
+#The x axis is the Skull Width
+ggplot(sparrows, aes(x=Skull_Width))+
+  #the density plot filling in the colors with the survival. 
+  #The alpha will make the colors transparent
+  geom_density(aes(fill=Survival), alpha=0.6) +
+  #fixs the ladels
+  labs(x="Skull Length", y="Density") +
+  #It will fill in the colors
+  scale_fill_manual(values = c("midnightblue", "lavender"))
+```
+
+
+<answer>
+<!-- your answer goes in here. DO NOT DELETE THE ANSWER TAGS -->
+    It does not look like skull length and died are not linked. 
+    
+</answer>
+
+
+
+##### Question 6
+We will now learn to make a _faceted_ plot, which splits your figure into a row or grid of panels highlighting different subsets of the data. Our goal is to re-make the density plot from Question 5, but _faceting by sex_: This means there will be one plot for Males and one plot for Females (ordered by factor level!!). There are two functions that can accomplish this: `facet_wrap()` and `facet_grid()`; the latter is most useful for faceting multiple variables.
+
+  + Consider this simple example of visualizing iris sepal lengths _faceted by Species_, using the function `facet_wrap()`:
+    ```{r facet-demo}
+    ggplot(iris, aes(x = Sepal.Length)) + 
+      geom_density() +
+      facet_wrap(~Species) ## the tilde!! so important!! Pronounced as "across" or "by", as in: facet across species, or facet by species
+   
+    ```
+  
+
+Now, redo your plot from Question 5 so that it is faceted by `Sex`. In the space below, write 2-4 sentences about whether considering sex separately when plotting helped you to understand trends in the data. What trends do you now see that you didn't see before, if any? What trends are new?
+    
+
+```{r survival-skull-density-facet}
+### code for faceted plot goes here
+    
+# the density plot adding facet_wrap(~Sex)    
+ggplot(sparrows, aes(x=Skull_Width))+
+#the density plot filling in the colors with the survival. 
+#The alpha will make the colors transparent
+geom_density(aes(fill=Survival), alpha=0.6) +
+  facet_wrap(~Sex) +
+#fixs the ladels
+labs(x="Skull Width", y="Density") +
+   #It will fill in the colors
+  scale_fill_manual(values = c("azure4", "aquamarine"))
+    
+```
+
+
+<answer>
+<!-- your answer goes in here. DO NOT DELETE THE ANSWER TAGS -->
+  The graph is differnet in the data. It is eaier to see the Skull Width places a role in Sex. There are more females that dead.  
+    
+</answer>
+
+
+##### Question 7
+Make a jitter plot of `Weight` across `Sex`, colored by `Age`. Before you plot, think carefully about what belongs on X vs Y axis. For this task, you should choose your own colors, ensure the jitter width makes the plot readable, AND place the legend at the BOTTOM of the plot.
+
+```{r weight-sex-age-jitter}
+#jitter plot with the values Sex, weight and colored by Age
+ggplot(sparrows, aes(x=Sex, y=Weight, color=Age)) +
+  #jitter plot function with a width
+  geom_jitter(width = 0.25) + 
+  scale_color_manual(values =c("darkgreen","goldenrod2"))
+```
+
+##### Question 8
+Make a second jitter plot of `Weight` across `Sex`, except this time color all points according to the bird's `Length`. Again, choose your own colors, ensure an appropriate jitter width, place the legend at the bottom, and ensuring the color scheme is appropriate for the _type of variable you are mapping to color_ which is now a CONTINUOUS variable:
+
++ When specifying _discrete color scales_, we use `scale_color_manual()` (or its `_fill_` equivalent)
++ When specifying _continuous color scales_, we often use one of two functions:
+  + `scale_color_gradient()` (or again its `_fill_` equivalent). There is also a function called `scale_color_continuous()`, which just takes you back to the gradient function anyways.
+  + `scale_color_distiller()`, which provides you access to [`RColorBrewer`](https://www.datanovia.com/en/blog/the-a-z-of-rcolorbrewer-palette/) palettes. 
+  
+**Get started writing your answer by using the code `scale_color_distiller(palette = "Reds")` and customize to your liking from there.**
+
+```{r weight-sex-length-jitter}
+### code for jitter plot colored by length goes here
+
+#jitter plot with the values Sex, weight and colored by Age
+ggplot(sparrows, aes(x=Sex, y=Weight, color=Skull_Length)) +
+  #jitter plot function with a width
+  geom_jitter(width = 0.25) +
+  scale_color_distiller(palette = "Spectral")
+  
+
+```
+
+
+##### Question 9
+Plot the distribution of sparrow sternum lengths as histograms faceted by `Sex` AND `Age` by using the function `facet_grid(x~y)`, where `x` and `y` are the two variables you are faceting across (be brave, jump in the deep end, and try it out!). Make sure that the `Sex` facet is shown VERTICALLY and the `Age` facet is shown `HORIZONTALLY`.
+
+When styling your histograms:
+
++ Choose a bin width that makes all histograms mostly continuous (no empty spaces between bars).
++ Add histogram fills according to EITHER `Sex` or `Age`
++ Make the color of the histograms black
+  
+```{r sternum-facet-histogram}
+### Code for faceted histogram goes here
+
+#First step the data set, and the x-axis 
+ggplot(sparrows, aes(x=Sternum_Length)) +
+  #the fact_grid will add the Age and Sex factors
+  geom_histogram() + facet_grid(Age~Sex) +
+  #Clear up axis 
+  labs(x="Steruman Skull", y="Count")
+```
+
+##### Question 10
+Visualize the relationship between sparrow skull length (X axis) and skull width (Y axis) using a scatterplot where points are colored by `Sex`. Choose your own colors yet again, and **save your plot to a variable** for future use. _For this plot, make sure to NOT include a title._
+
+In the space below, describe the relationship in 2-3 sentences: is it positive or negative? strong or weak? Do you see any systematic differences between sexes, or are patterns most the same between sexes?
+
+```{r skull-scatter}
+### Code for scatterplot goes here
+
+#the graph with Skull Length in an x-axis, the y-axis is Skull Width, and the color based of the sex
+ggplot(sparrows, aes(x=Skull_Length, y=Skull_Width, color=Sex)) +
+  geom_point() +
+  #cleaning up the axis
+  labs(x="Skull Length", y="Skull Width") +
+  scale_color_manual(values = c("red", "blue")) -> plot3 #making the graph into a variable
+  
+```
+
+
+<answer>
+<!-- your answer goes in here. DO NOT DELETE THE ANSWER TAGS -->
+    
+    It looks like there is a positive trend. The female on the graph are in the middle around 32. The males are all over the place. 
+</answer>
+
+
+##### Question 11
+In fact, we can continue to modify existing plots. Let's add a _title_ to the plot from Question 10, simply by adding the appropriate label to the variable you definitely saved.
+
+```{r skull-scatter-title}
+### Code to add in title goes here
+#the first stpe of the graph naming the axis and color
+ggplot(sparrows, aes(x=Skull_Length, y=Skull_Width, color=Sex)) +
+  geom_point() +
+  #cleaning up the axis, and adding title
+  labs(x="Skull Length", y="Skull Width", title="Skull Length vs Skull Width") +
+  scale_color_manual(values = c("red", "blue"))
+```
+
+##### Question 12
+We will now recreate the scatterplot to include a _line of best fit_ (also known as _regression line_) with the additional geom, `geom_smooth(method = "lm")` (don't worry about its specific `method="lm"` argument yet, just know you should use it right now). We will want to color the points by `Sex`, as before. Perform this task below in TWO WAYS:
+
++ Place the aesthetic mapping to color within the `geom_point()` call
++ Place the aesthetic mapping to color within the overall `ggplot()` call (along with X and Y specs). 
+
+In the space below, explain why the lines of best fit (aka regression lines) look different between the two plots, and what each line represents in each plot. In addition, based on your figures, do you think males and females have fundamentally different RELATIONSHIPS between skull width and length?
+
+```{r skull-scatter-smooth-1}
+## Scatterplot + line of best fit goes here, with color in geom_point
+ggplot(sparrows, aes(x=Skull_Length, y=Skull_Width)) +
+  geom_point(aes(color=Sex)) + 
+  #adding the regression
+  geom_smooth(method = "lm") +
+  #cleaning up the axis
+  labs(x="Skull Length", y="Skull Width") +
+  #adding different color
+  scale_color_manual(values = c("red", "blue"))
+```
+
+
+```{r skull-scatter-smooth-2}
+## Scatterplot + line of best fit goes here, with color in ggplot
+ggplot(sparrows, aes(x=Skull_Length, y=Skull_Width, color=Sex)) +
+  geom_point() + 
+  #adding regression line
+  geom_smooth(method = "lm") +
+  #cleaning up the axis
+  labs(x="Skull Length", y="Skull Width") +
+  #adding different color
+  scale_color_manual(values = c("red", "blue"))
+```
+    
+  
+<answer>
+<!-- your answer goes in here. DO NOT DELETE THE ANSWER TAGS -->
+    The best regression line is the the first one with adding the color in the geom-point. The second graph with the color being the ggplot is a lttle busy with the two regression line. The second graph shows there will be a different in the sex. 
+    
+</answer>
+
+
+##### Question 13
+In the previous question, we began to observe that it might matter where the aesthetic mapping is specified. To try and understand this further, consider the following code chunk which has a bug and gives an error. (The blank space you see below the code is there because the plot couldn't be built due to a bug in the code).
+
+
+```{r bug, error=TRUE}
+## This code will not work - run it and see the error message!
+ggplot(sparrows, aes(color = Sex)) + 
+  geom_point(aes(x = Skull_Length, y = Skull_Width)) + 
+  geom_smooth(method = "lm")
+```
+
+
+
+In the space below, re-write the code for this plot so that it works properly. Then, considering this example, and what you observed in Question 12, write 1-2 sentences describing what you have now learned about where you specify the plot aesthetics.
+
+
+```{r bug-fixed}
+## Fix the code above in this chunk.
+#ggplot + data + axis
+ggplot(sparrows, aes(x = Skull_Length, y = Skull_Width)) + 
+  #adding the color
+  geom_point(aes(color = Sex)) + 
+  #adding the regression line
+  geom_smooth(method = "lm") +
+  #clearing up the axis
+  labs(x="Skull Length", y="Skull Width")
+```
+
+
+<answer>
+<!-- your answer goes in here. DO NOT DELETE THE ANSWER TAGS -->
+    R will read the script in order. It will read the color first. The code needs the axixs first then the color
+    
+</answer>
+
+
+##### Question 14
+Let's learn one more useful geom: `geom_text()`. Yet again, re-create the same scatterplot but **replace `geom_point()` with `geom_text()`**. This will write some text label rather than drawing points, so we need to tell `ggplot` what the label is (look up the docs! you can do it!). 
+
+> Note: neither of these plots is particularly good. But, they do teach how to use `geom_text()`!
+
+Do this task in two ways: 
+
++ Make all labels the letter "B" for bird
++ Make all labels the `Age` of that bird (hint: This is an aesthetic mapping!).
+
+```{r skull-scatter-text-B}
+### Scatterplot with points all labeled "B" goes here
+
+#graph + data + axis + color
+ggplot(sparrows, aes(x=Skull_Length, y=Skull_Width, color=Sex)) +
+  #using the geom_text to make the points into B
+  geom_text(label="B") +
+  #clean up the axis
+  labs(x="Skull Length", y="Skull Width") +
+  #changing the colors of the dots
+  scale_color_manual(values = c("dodgerblue4", "gold"))
+
+```
+    
+    
+    
+```{r skull-scatter-text-age}
+## Scatterplot with points labeled according to age goes here
+
+ggplot(sparrows, aes(x=Skull_Length, y=Skull_Width, color=Sex)) +
+# using aesthetic mapping to label with the Age factor
+  geom_text(aes(label=Age))+
+  #clean up the axis
+  labs(x="Skull Length", y="Skull Width") +
+  #changing the colors of the dots
+  scale_color_manual(values = c("mediumspringgreen", "honeydew4"))
+```
+
+
+##### Question 15
+We can also learn to change how points are displayed: by default they are dots that can be colored but not filled. It turns out there are many types of shapes that R accepts. _The default shape in ggplot is 19_. Importantly, point types 21-25 can BOTH be colored (eg black outline) and filled (eg the blue fill). 
+
+
+![R point options](static/img/pch.png){width=300px}
+
+Practice specifying _two new types of shapes_, one that CAN NOT be filled and one that CAN BE filled, in a scatterplot of Skull Width vs Skull Length below. Specify your shape like this: `geom_point(shape=...)` where `...` is the number shape.
+
+```{r skull-scatter-point-color-and-fill}
+### Scatterplot with type of point either 21,22,23,24,25. Specify a color AND a fill (not aesthetic - just straight up color/fill the points)
+
+#Using the plot3 from question 10, it has a shape 25, and fill with Skull Length and in the darkred color
+plot3 + geom_point(shape=25,fill="Skull_Length", color="darkred")
+
+```
+    
+    
+    
+```{r skull-scatter-point-color-onlu}
+### Scatterplot with type of point NOT 21,22,23,24,25. Specify a color (not aesthetic - just straight up color the points)
+
+#Using the plot3 from question 10, it has a shape 11 and color with a black star
+plot3 + geom_point(shape=11, color="black")
+```
