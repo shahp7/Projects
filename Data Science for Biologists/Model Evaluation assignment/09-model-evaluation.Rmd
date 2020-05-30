@@ -1,0 +1,266 @@
+---
+title: "Introduction to model evaluation"
+subtitle: "Data Science for Biologists, Spring 2020"
+author: "Poonam Shah"
+output: 
+  html_document:
+    highlight: haddock
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(broom) 
+library(modelr)
+library(patchwork)
+set.seed(7530)
+```
+
+## Instructions
+
+Standard grading criteria apply, except there is no "answer style" - just write out answers normally! **Make sure your billeted lists render appropriately in the knitted output!!!**
+
+This assignment will use an external dataset of various physical measurements from 250 adult males. Our goal for this assignment is to build and evaluate a model from this data to **predict body fat percentage** (column `Percent`) in adult males, and then use this model to predict future outcomes. Age is measured in years, weight in pounds, height in inches, and all other measurements are circumference measured in cm.
+
+```{r, collapse=T}
+fatmen <- read_csv("https://raw.githubusercontent.com/sjspielman/datascience_for_biologists/master/data/bodyfat.csv")
+
+dplyr::glimpse(fatmen)
+```
+
+
+
+## Part 1: Build a model using AIC stepwise model selection
+
+Using the `step()` function, determine the most appropriate model to explain variation in bodyfat percentage in this data. Examine the model output with the `summary` function, and answer questions below. **You will use this model (aka you will specify these predictors) for all model evaluation questions.**
+
+```{r Question 1 part 1}
+## Use step() to build and save a model to explain Percent. PLEASE use the argument trace=F when calling step()!!
+
+
+step(lm(Percent ~ ., data = fatmen), trace =F) -> final_model
+
+## Examine output with summary OR broom functions tidy and glance
+broom::tidy(final_model)
+broom::glance(final_model)
+
+```
+
+#### Part 1 questions: Answer the questions in the templated bullets!
+
+1. In a bulleted list below, state the predictor variables for the final model and their P-values. You do not need to worry about coefficients!!
+
+    + Age, P= 3.03e-2
+    + Abdomen, P= 2.22e-29
+    + Forearm, P= 3.17e- 3
+    + Wrist, P= 2.88e- 3
+
+2. What percentage of variation in bodyfat percentage is explained by this model? 
+
+    + 74.2%, the R2 is the amount of body fat is explained. 
+
+
+3. What percentage of variation in bodyfat percentage is UNEXPLAINED by this model?
+  
+    + 25.8% is not explained by this model. 
+
+4. What is the RMSE of your model? Hint: you need to run some code!
+
+    ```{r Question 1 part 2}
+    ## code to get RMSE of model, using the function modelr::rmse()
+    
+    rmse(final_model, fatmen)
+    ```
+  
+    + The RMSA of the model is 4.231338
+
+
+## Part 2: Evaluate the model using several approaches
+
+### Part 2.1: Training and testing approach
+
+**First, use a simple train/test approach**, where the training data is a random subset comprising 65% of the total dataset. Determine the R-squared (`modelr::rsquare()`) and RMSE (`modelr::rmse()`)  as determined from the training AND testing data.
+
+```{r part 2.1}
+percent_formula <- as.formula("Percent ~ Age + Weight + Neck + Abdomen + Thigh + 
+    Forearm + Wrist")
+## split data into train and test, using this variable as part of your code:
+training_frac <- 0.65
+
+training_data <- dplyr::sample_frac(fatmen, training_frac)
+testing_data <- dplyr::anti_join(fatmen, training_data)
+
+## Train model on training data. DO NOT USE summary(), just fit the model with the training data.
+
+trained_model <- lm(percent_formula, data= training_data)
+
+## Determine metrics on TRAINING data (R-squared and RMSE), using the trained model
+
+rsquare(trained_model, training_data)
+rmse(trained_model, training_data)
+
+## Determine metrics on TESTING data (R-squared and RMSE), using the trained model
+
+rsquare(trained_model, testing_data)
+rmse(trained_model, testing_data)
+
+```
+
+#### Part 2.1 questions: Answer the questions in the templated bullets!
+
+1. Compare the training data $R^2$ to the testing data $R^2$. Which is higher (i.e., does the model run on training or testing data explain more variation in Percent), and is this outcome expected?
+
+  + training R^2 is 0.759 but testing R^2 is 0.693. Training is higher. The results are very common to have the training data to be higher than the testing data.  
+
+2. Compare the training data *RMSE* to the testing data *RMSE*. Which is *lower* (i.e., is there more error from the model run on training or testing data), and is this outcome expected?
+
+  + training RMSE is 4.15 but testing RMSE is 4.47. The training data is lower then the testing data. The testing data is high which is unexpected. 
+
+
+
+
+### Part 2.2: K-fold cross validation
+
+Use k-fold cross validation with **15 folds** to evaluate the model. Determine the $R^2$ and RMSE for each fold, and *visualize* the distributions of $R^2$ and RMSE in two separate plots that you *add together with patchwork*. You should also calculate the mean $R^2$ and mean RMSE values.
+
+```{r Question part 2.2 }
+## First define the FUNCTION you will use with purrr::map which contains your linear model.
+## Do NOT use step() in here - you should have used step in Part 1 to know which predictors should be included here
+my_bodyfat_model <- function(input_data){
+  lm(percent_formula, data =input_data)  
+}
+
+## perform k-fold cross validation, using this variable in your code
+number_folds <- 15
+
+crossv_kfold(fatmen, number_folds) %>%
+  mutate(model = purrr::map(train, my_bodyfat_model),
+         rsquare= purrr::map2_dbl(model,test,rsquare),
+         rmse_value= purrr::map2_dbl(model,test,rmse)) -> final_kfold
+
+## Calculate the mean R^2 and RMSE 
+
+mean(final_kfold$rsquare)
+mean(final_kfold$rmse_value)
+
+## Make figures for R^2 and RMSE, which clearly show the MEAN values for each distribution using stat_summary() or similar (unless you make a boxplot, which already shows the median)
+
+ggplot(final_kfold, aes(x="", y=rmse_value)) + 
+geom_boxplot() +
+#clearing up the axis
+labs(x= " ", y= "RMSE value", 
+     title = "Looking at the kfold mean of RMSE value")  
+
+ggplot(final_kfold, aes(x="", y=rsquare)) + 
+geom_boxplot() +
+#cleaning by the axis
+labs(x= " ", y= "rsquare value", 
+     title = "Looking at the kfold mean of rsquare value") 
+
+```
+
+#### Part 2.2 questions: Answer the questions in the templated bullets!
+
+1. Examine your distribution of $R^2$ values. What is the average $R^2$, and how does it compare to the **testing $R^2$** from Part 1?
+
+    + The testing R^2 in part 1 was 74.2. The average R^2 is around 0.7. This is a huge different.   
+
+2. Examine your distribution of *RMSE* values. What is the average *RMSE*, and how does it compare to the **testing RMSE** from Part 1?
+
+    + The RMSA from part 2 is 4.2313. The average RMSE is around 4.3. The value are close. 
+  
+
+
+### Part 2.3: Leave-one-out cross validation (LOOCV)
+
+```{r part 2.3}
+## perform LOOCV (using the function my_bodyfat_model defined in Part 2.2)
+
+## perform k-fold cross validation, using this variable in your code
+number_folds <- 15
+
+crossv_loo(fatmen) %>%
+  mutate(model = purrr::map(train, my_bodyfat_model),
+         rsquare= purrr::map2_dbl(model,test,rsquare),
+         rmse_value= purrr::map2_dbl(model,test,rmse)) -> final_loo
+
+## Calculate the mean R^2 and RMSE 
+
+mean(final_loo$rsquare)
+mean(final_loo$rmse_value)
+## Calculate the mean of RMSE 
+
+## Make figure of RMSE distribution, which clearly shows the MEAN value for the distribution using stat_summary() (unless you make a boxplot, which already shows the median)
+
+ggplot(final_loo, aes(x="", y=rmse_value)) + 
+geom_boxplot() +
+labs(x= " ", y= "RMSE value", title = "Looking at the final loo mean of RMSE value") 
+
+ggplot(final_loo, aes(x="", y=rsquare)) +
+geom_boxplot() +
+labs(x= " ", y= "rsquare value", title = "Looking at the final loo mean of rquare value") 
+```
+
+#### Part 2.3 question: Answer the questions in the templated bullets!
+
+1. Examine your distribution of *RMSE* values. What is the average *RMSE*, and how does it compare to the **testing RMSE** from Part 1? How does it compare to the average *RMSE* from k-fold cross validation?
+
+    + The RMSA from part 2 is 4.2313. The kfold-cross average RMSE is around 4.3. The final loo average RMSE value is below 5. All of the RMSE are around the same. 
+
+
+### Part 2.4: Wrap-up
+
+Considering all three approaches, do you believe this model is highly explanatory of Percent (e.g., how are the $R^2$ values)? Further, do you believe the error in this model is low, moderate or high (e.g., how are the RMSE values)? Answer in 1-2 sentences in the bullet:
+
+  + The testing R^2 in part 1 was 74.2. The average R^2 for kfold-cross is around 0.7. The final loo average R^2 is NA. This is a huge error. All of the valuables are too different from each other. The RMSE does not have a high error. Most of the values were close enough together. 
+  
+
+## Part 3: Predictions
+
+New men have arrived, and we want to use our model to predict their body fat percentages! Using the function `modelr::add_predictions()` use our model to predict what the body fat percentages will be for three men with the following physical attributes.
+
++ Bob
+  + 37 years of Age
+  + Weight of 195 pounds
+  + 43.6 cm Neck circumference
+  + 110.6 cm Abdomen circumference
+  + 71.7 cm Thigh circumference
+  + 31.2 Forearm circumference
+  + 19.2 Wrist circumference
++ Bill
+  + 65 years of Age
+  + Weight of 183 pounds
+  + 41.2 cm Neck circumference
+  + 90.1 cm Abdomen circumference
+  + 77.5 cm Thigh circumference
+  + 32.2 cm Forearm circumference
+  + 18.2 cm Wrist circumference
++ Fred
+  + 19 years of Age
+  + Weight of 121 pounds
+  + 30.2 cm Neck circumference
+  + 68 cm Abdomen circumference
+  + 48.1 cm Thigh circumference
+  + 23.8 cm Forearm circumference
+  + 16.1 cm Wrist circumference
+
+```{r Question part 3}
+## Make a SINGLE tibble with THREE ROWS (one per observed new man), and use this tibble to predict outcomes with `modelr::add_predictions()
+tibble( Age = c(37,65,19),
+        Weight = c(195, 183, 121),
+        Neck= c(43.6,41.2,30.2),
+        Abdomen = c(110.6, 90.1, 68),
+        Thigh = c(71.7, 77.5, 48.1),
+        Forearm =c(31.2, 32.2,23.8),
+        Wrist =c(19.2, 18.2, 16.1)) -> new_men
+new_men
+
+
+modelr::add_predictions(new_men, final_model)
+## HINT: See the tidyr assignment for different ways to make a tibble directly within R
+
+```
+
