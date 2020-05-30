@@ -1,0 +1,23 @@
+---
+title: "Practice Plotting and Github"
+author: "Poonam Shah"
+date: "3/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+```{r }
+iris %>%
+  ggplot(aes(x=Species)) +
+  geom_bar(fill="blue") -> plot1
+
+plot1
+
+ggsave("practice_plot.png", plot1 )
+```

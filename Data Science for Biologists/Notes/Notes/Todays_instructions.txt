@@ -1,0 +1,9 @@
+This is your casual reminder that the EDITOR pane is just a plain text editor! It doesn't know about the console, and vice versa, unless you want them to interact. This isn't even an R script - it is a plain text file.
+
+Link to manuscript: https://onlinelibrary.wiley.com/doi/full/10.1002/ece3.4330
+
+Obtain their data (follow along in class!!), and upload it as a csv. The function is readr::read_csv(). (hey, what's that readr::, you ask? follow along in class still!)
+
+Create (from the RStudio template) an RMarkdown file where you read in the data and explore its contents. Convert the first two columns to factors (keep the levels at their defaults), and make a plot of your choosing! 
+
+In addition, export the file as a tab-delimited file. The function is readr::write_tsv(). Download the file to your computer for practice :)

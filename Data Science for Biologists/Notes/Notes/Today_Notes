@@ -1,0 +1,6 @@
+Hello welcome to the world of today lectures 2/10/2020. 
+Today we are going to the read and data activiy 
+The first step is to find a data then we going to the read it into R. 
+NEVER IMPORT DATA just view it. 
+
+We are going to use read_cvs2 with this data set since the data from EU
