@@ -1,0 +1,10 @@
+Installed libraries include:
+
+1. tidyverse (full install w/ all deps)
+2. magrittr
+3. knitr
+4. rmarkdown
+5. RColorBrewer
+6. infer
+7. patchwork
+8. tidylog
