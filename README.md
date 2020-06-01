@@ -1,6 +1,6 @@
 # Projects
 
-It is my repositories holding most of the coding projects I have done in college. It is a place to hold my projects I did over the semester. I am part of the graduction class of 2020 of Rowan Unviersity, getting a Bachelor of Science Biological Science, and Certificate of Undergraduate Studies Computer Programming. I learned the coding learnings of Java, C++, C, Unix, and R
+It is my repositories holding most of the coding projects I have done in college. It is a place to hold my projects I did over the semester. I am part of the graduction class of 2020 of Rowan Unviersity, getting a Bachelor of Science Biological Science, and Certificate of Undergraduate Studies Computer Programming. I learned the coding learnings of Java, C++, C, Linux, and R
 
 ##### Advance Programming Workshop: R
 + Programming languages, integrated development environments, application programming interfaces, software packages, and libraries are examples of programming technologies. 
